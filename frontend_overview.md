@@ -49,6 +49,40 @@ React
   ↓
 Map + Results
 -------------------------------------------------------
+FLOW OF BACKEND(  SOLVE ONE PROLBEM AT A TIME ) , bana to badhiya nahi to machudaye 
+sample.eml
+    ↓
+email_parser.py
+    ↓
+header_parser.py
+    ↓
+Received headers
+    ↓
+ip_extractor.py
+    ↓
+IP addresses
+    ↓
+ip_validator.py
+    ↓
+Public / Private / Invalid
+    ↓
+location_analyzer.py
+    ↓
+Earliest reliable IP
+    ↓
+ip_geolocation.py
+    ↓
+Country
+Region
+City
+ISP
+ASN
+    ↓
+FastAPI
+    ↓
+React
+    ↓
+LocationMap
 # 🖥️ Frontend Modules
 
 ## 1. Dashboard
