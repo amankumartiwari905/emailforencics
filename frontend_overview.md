@@ -7,7 +7,48 @@ and fraudulent emails and provides forensic intelligence about their
 headers, relay path, domains, IPs, and probable source infrastructure.
 
 ---
-
+┌─────────────────────────────────────┐
+│          FRONTEND (React)           │
+│                                     │
+│ Upload .eml                         │
+│ Dashboard                           │
+│ Map                                 │
+│ Results                             │
+└──────────────────┬──────────────────┘
+                   │ API
+                   ▼
+┌─────────────────────────────────────┐
+│        BACKEND (Python)             │
+│             FastAPI                 │
+│                                     │
+│ .eml parsing                        │
+│ Header analysis                     │
+│ IP extraction                       │
+│ SPF/DKIM/DMARC                      │
+│ URL extraction                      │
+│ Domain analysis                     │
+│ IP intelligence                     │
+│ Geolocation                         │
+│ Risk scoring                        │
+│ AI/ML/NLP                           │
+│ Forensic analysis                   │
+└──────────────────┬──────────────────┘
+                   │
+                   ▼
+             PostgreSQL
+-------------------------------------------------------
+React
+  ↓
+"Upload Email" button
+  ↓
+Python FastAPI
+  ↓
+Analysis
+  ↓
+React
+  ↓
+Map + Results
+-------------------------------------------------------
 # 🖥️ Frontend Modules
 
 ## 1. Dashboard
