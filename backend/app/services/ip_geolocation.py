@@ -1,9 +1,15 @@
 import ipaddress
+import os
+
 import requests
+from dotenv import load_dotenv
+
+load_dotenv()
+
+IPINFO_TOKEN = os.getenv("IPINFO_TOKEN")
 
 
 def get_ip_location(ip: str):
-
     try:
         ip_obj = ipaddress.ip_address(ip)
 
@@ -12,64 +18,55 @@ def get_ip_location(ip: str):
             return {
                 "ip": ip,
                 "country": None,
+                "country_code": None,
+                "continent": None,
+                "continent_code": None,
                 "city": None,
                 "latitude": None,
                 "longitude": None,
                 "asn": None,
-                "organization": None,
-                "status": "private_ip"
+                "as_name": None,
+                "as_domain": None,
+                "status": "private_ip",
             }
 
-        # Real IP geolocation lookup
-        url = f"https://ipapi.co/{ip}/json/"
+        # IPinfo Lite lookup
+        url = f"https://api.ipinfo.io/lite/{ip}"
 
         response = requests.get(
             url,
+            params={"token": IPINFO_TOKEN},
             timeout=10,
-            headers={
-                "User-Agent": "EmailThreatDetection/1.0"
-            }
         )
 
         response.raise_for_status()
 
         data = response.json()
 
-        # ipapi can return HTTP 200 with an error object
-        if data.get("error"):
-            return {
-                "ip": ip,
-                "country": None,
-                "city": None,
-                "latitude": None,
-                "longitude": None,
-                "asn": None,
-                "organization": None,
-                "status": "lookup_failed",
-                "reason": data.get("reason")
-            }
-
         return {
             "ip": ip,
-            "country": data.get("country_name"),
-            "region": data.get("region"),
-            "city": data.get("city"),
-            "latitude": data.get("latitude"),
-            "longitude": data.get("longitude"),
+            "country": data.get("country"),
+            "country_code": data.get("country_code"),
+            "continent": data.get("continent"),
+            "continent_code": data.get("continent_code"),
+            "city": None,
+            "latitude": None,
+            "longitude": None,
             "asn": data.get("asn"),
-            "organization": data.get("org"),
-            "status": "public_ip"
+            "as_name": data.get("as_name"),
+            "as_domain": data.get("as_domain"),
+            "status": "public_ip",
         }
 
     except ValueError:
         return {
             "ip": ip,
-            "status": "invalid_ip"
+            "status": "invalid_ip",
         }
 
     except requests.RequestException as e:
         return {
             "ip": ip,
             "status": "lookup_error",
-            "reason": str(e)
+            "reason": str(e),
         }
