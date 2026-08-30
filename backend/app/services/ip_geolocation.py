@@ -25,6 +25,7 @@ def get_ip_location(ip: str):
                 "latitude": None,
                 "longitude": None,
                 "asn": None,
+<<<<<<< Updated upstream
                 "as_name": None,
                 "as_domain": None,
                 "status": "private_ip",
@@ -32,6 +33,13 @@ def get_ip_location(ip: str):
 
         # IPinfo Lite lookup
         url = f"https://api.ipinfo.io/lite/{ip}"
+=======
+                "organization": None,
+                "status": "private_ip"
+            }     
+            # Real IP geolocation lookup
+        url = f"https://ipapi.co/{ip}/json/"
+>>>>>>> Stashed changes
 
         response = requests.get(
             url,
