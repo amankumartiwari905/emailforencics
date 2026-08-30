@@ -6,9 +6,10 @@ from app.services.ip_extractor import extract_ip_addresses
 
 from app.services.ip_validator import validate_ip
 from app.services.ip_geolocation import get_ip_location
+from app.services.header_parser import parse_authentication_results
 def parse_email(email_data: bytes):
     msg = BytesParser(policy=policy.default).parsebytes(email_data)
-
+    authentication = parse_authentication_results(msg)
     body = ""
 
     if msg.is_multipart():
@@ -65,4 +66,5 @@ def parse_email(email_data: bytes):
         "received_headers": received_headers,
         "validated_ips": validated_ips,
         "ip_locations": ip_locations,
+        "authentication": authentication,
     }

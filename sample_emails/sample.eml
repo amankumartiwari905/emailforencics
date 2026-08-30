@@ -8,7 +8,14 @@ MIME-Version: 1.0
 Content-Type: text/plain; charset="UTF-8"
 Received: from mail.attacker.com (185.23.45.67)
 Received: from relay.example.com (10.20.30.40)
+From:
+attacker@example.com
 
+Reply-To:
+support@random-domain.com
+
+Return-Path:
+bounce@random-domain.com
 Hello,
 
 Your account has been suspended.
