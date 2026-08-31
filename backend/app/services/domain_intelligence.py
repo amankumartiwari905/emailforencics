@@ -117,3 +117,25 @@ def analyze_domain(domain: str):
     )
 
     return result
+
+
+def analyze_email_domains(domain_analysis):
+    """Analyze multiple email domains from email headers."""
+    results = {}
+
+    domains = set()
+
+    for key in [
+        "sender_domain",
+        "reply_to_domain",
+        "return_path_domain"
+    ]:
+        domain = domain_analysis.get(key)
+
+        if domain:
+            domains.add(domain)
+
+    for domain in domains:
+        results[domain] = analyze_domain(domain)
+
+    return results
