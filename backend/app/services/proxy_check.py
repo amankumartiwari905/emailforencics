@@ -26,7 +26,7 @@ def check_proxy(ip: str):
         response = requests.get(
             url,
             params=params,
-            timeout=10
+            timeout=5
         )
 
         response.raise_for_status()
