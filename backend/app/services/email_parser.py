@@ -4,6 +4,7 @@ from email.message import EmailMessage
 import re
 import html
 import logging
+import hashlib
 
 from app.services.ip_extractor import extract_ip_addresses, flatten_unique_ips
 from app.services.ip_validator import validate_ip
@@ -119,11 +120,20 @@ def parse_email(email_data: bytes) -> dict:
             if part.get_content_disposition() == "attachment":
                 payload = part.get_payload(decode=True) or b""
                 truncated = len(payload) > _MAX_ATTACHMENT_BYTES
+
+                # Hashes are used downstream for known-malicious-file
+                # lookups and for de-duplicating attachments across
+                # emails in the same campaign.
+                sha256_hash = hashlib.sha256(payload).hexdigest() if payload else None
+                md5_hash = hashlib.md5(payload).hexdigest() if payload else None
+
                 found.append({
                     "filename": part.get_filename(),
                     "content_type": part.get_content_type(),
                     "size": len(payload),
                     "truncated": truncated,
+                    "sha256": sha256_hash,
+                    "md5": md5_hash,
                 })
         return found
 

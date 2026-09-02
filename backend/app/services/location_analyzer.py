@@ -1,4 +1,50 @@
 import ipaddress
+import re
+
+# Common trusted mail infrastructure hostname patterns. Received headers
+# added by these systems are treated as reliable, since major providers
+# don't let arbitrary senders forge their own internal relay headers.
+_TRUSTED_MTA_PATTERNS = [
+    r"google\.com", r"gmail\.com", r"googlemail\.com",
+    r"outlook\.com", r"protection\.outlook\.com", r"microsoft\.com",
+    r"yahoo\.com", r"yahoodns\.net",
+    r"amazonses\.com", r"amazonaws\.com",
+    r"zoho\.com", r"protonmail\.ch",
+]
+
+_trusted_re = re.compile("|".join(_TRUSTED_MTA_PATTERNS), re.IGNORECASE)
+
+
+def detect_trusted_hop_boundary(
+    ip_hops: list[dict],
+    recipient_domain: str | None = None
+) -> int:
+    """
+    Walks hops from the top (hop_index 0 = most recently added, closest
+    to the final recipient) downward, and returns the index of the first
+    hop that does NOT look like trusted infrastructure.
+
+    Everything from index 0 up to (but not including) the returned index
+    is "our side" -- added by mail systems that don't let arbitrary
+    senders forge headers. Everything from the returned index onward is
+    untrusted territory: the attacker's infrastructure, or spoofable.
+
+    If recipient_domain is given, it's also checked against each hop's
+    header text -- catches self-hosted mail servers that wouldn't match
+    the generic provider patterns above.
+    """
+    for hop in ip_hops:
+        header = hop.get("header", "")
+
+        is_trusted = bool(_trusted_re.search(header))
+
+        if not is_trusted and recipient_domain:
+            is_trusted = recipient_domain.lower() in header.lower()
+
+        if not is_trusted:
+            return hop["hop_index"]
+
+    return len(ip_hops)
 
 
 def find_earliest_reliable_ip(
@@ -53,6 +99,7 @@ def find_earliest_reliable_ip(
             }
 
     return None
+
 
 def build_relay_chain(ip_hops: list[dict]) -> list[dict]:
     """

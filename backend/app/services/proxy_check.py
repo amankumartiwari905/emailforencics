@@ -1,5 +1,8 @@
 import os
+import ipaddress
 import requests
+from dotenv import load_dotenv
+load_dotenv()
 
 
 def check_proxy(ip: str):
@@ -7,6 +10,43 @@ def check_proxy(ip: str):
     Check an IP address for VPN, proxy, TOR, hosting,
     and other network intelligence using ProxyCheck.io v3.
     """
+
+    # Skip private/non-routable IPs -- ProxyCheck's API returns a
+    # 400 Bad Request for these since there's nothing to look up.
+    try:
+        ip_obj = ipaddress.ip_address(ip)
+        if ip_obj.is_private:
+            return {
+                "ip": ip,
+                "asn": None,
+                "organization": None,
+                "provider": None,
+                "hostname": None,
+                "connection_type": None,
+                "country": None,
+                "country_code": None,
+                "region": None,
+                "city": None,
+                "postal_code": None,
+                "latitude": None,
+                "longitude": None,
+                "vpn": None,
+                "proxy": None,
+                "tor": None,
+                "hosting": None,
+                "anonymous": None,
+                "compromised": None,
+                "scraper": None,
+                "risk_score": None,
+                "confidence": None,
+                "status": "private_ip",
+                "error": None
+            }
+    except ValueError:
+        return {
+            "ip": ip,
+            "error": "invalid_ip"
+        }
 
     api_key = os.getenv("PROXYCHECK_API_KEY")
 
@@ -71,6 +111,7 @@ def check_proxy(ip: str):
             "risk_score": result.get("risk"),
             "confidence": result.get("confidence"),
 
+            "status": "public_ip",
             "error": None
         }
 
