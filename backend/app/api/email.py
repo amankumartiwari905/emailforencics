@@ -8,6 +8,7 @@ from app.services.domain_risk_analyzer import calculate_domain_risk
 from app.services.url_analyzer import analyze_urls
 from app.services.threat_analyzer import analyze_threat
 import os
+from app.services.identity_correlator import get_campaign_cluster, get_full_graph
 import tempfile
 from fastapi.responses import FileResponse
 from app.services.report_generator import generate_forensic_report
