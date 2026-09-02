@@ -12,9 +12,6 @@ def analyze_threat(email_data):
     authentication = email_data.get("authentication", {})
     auth_result = analyze_authentication(authentication)
 
-    # auth_analyzer's own score maxes at 100; scale it down to fit
-    # proportionally into the overall fraud score instead of adding
-    # its raw 0-100 value directly (that would dominate everything else).
     auth_contribution = min(int(auth_result["auth_risk_score"] * 0.6), 60)
     score += auth_contribution
     reasons.extend(auth_result["reasons"])
@@ -67,20 +64,21 @@ def analyze_threat(email_data):
     # NLP / social engineering analysis
     # -------------------------
     nlp_analysis = email_data.get("nlp_analysis") or {}
-    nlp_score = nlp_analysis.get("nlp_risk_score", 0)
+    nlp_score = nlp_analysis.get("threat_score", 0)
     if nlp_score > 0:
-        # Scale contribution similarly to auth -- this is one signal
-        # among several, not the whole score.
         nlp_contribution = min(int(nlp_score * 0.5), 40)
         score += nlp_contribution
 
-        categories = nlp_analysis.get("pattern_analysis", {}).get("matched_categories", [])
-        if categories:
-            reasons.append(f"Social engineering language detected: {', '.join(categories)}")
+        tactics = nlp_analysis.get("tactics", [])
+        if tactics:
+            reasons.append(f"Social engineering language detected: {', '.join(tactics)}")
 
-        llm = nlp_analysis.get("llm_analysis")
-        if llm and llm.get("tactics_identified"):
-            reasons.append(f"AI analysis flagged tactics: {', '.join(llm['tactics_identified'])}")
+        pattern_layer = nlp_analysis.get("pattern_layer", {})
+        matched_categories = pattern_layer.get("matched_categories", [])
+        if "financial_fraud" in matched_categories and "executive_impersonation" in matched_categories:
+            score += 15
+            reasons.append("Compound BEC pattern: financial request combined with executive-impersonation language")
+
     # -------------------------
     # Attachments
     # -------------------------
@@ -90,6 +88,7 @@ def analyze_threat(email_data):
         if att_score > 0:
             score += min(att_score, 40)
             reasons.append(f"Suspicious attachment '{att.get('filename')}': {att.get('reasons')}")
+
     # -------------------------
     # Domain intelligence risk
     # -------------------------
@@ -100,9 +99,10 @@ def analyze_threat(email_data):
         if isinstance(domain_score, (int, float)) and domain_score > 0:
             score += min(int(domain_score), 30)
             reasons.append(f"Domain risk detected for {domain}: {domain_score}/100")
-     # -------------------------      
-     # Lookalike domain detection
-     # -------------------------
+
+    # -------------------------
+    # Lookalike domain detection
+    # -------------------------
     lookalike_analysis = email_data.get("lookalike_analysis") or []
     for match in lookalike_analysis:
         score += 30
@@ -149,6 +149,6 @@ def analyze_threat(email_data):
         "fraud_score": score,
         "classification": classification,
         "reasons": reasons,
-        "auth_analysis": auth_result,  # full breakdown kept for the UI
+        "auth_analysis": auth_result,
         "nlp_analysis": nlp_analysis,
     }
