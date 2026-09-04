@@ -34,24 +34,65 @@ VECTORIZER_PATH = os.path.join(
 
 
 # ==========================================
-# LOAD MODEL + VECTORIZER
+# LOAD TF-IDF VECTORIZER
 # ==========================================
 
-_start_time = time.perf_counter()
+print("\n==========================================")
+print("Loading ML phishing detection system...")
+print("==========================================")
+
+vectorizer_start = time.perf_counter()
 
 vectorizer = joblib.load(
     VECTORIZER_PATH
 )
 
+vectorizer_load_time = (
+    time.perf_counter() - vectorizer_start
+)
+
+print(
+    f"TF-IDF vectorizer loaded in: "
+    f"{vectorizer_load_time:.2f} seconds"
+)
+
+
+# ==========================================
+# LOAD PHISHING MODEL
+# ==========================================
+
+model_start = time.perf_counter()
+
 model = joblib.load(
     MODEL_PATH
 )
 
-_load_time = time.perf_counter() - _start_time
+model_load_time = (
+    time.perf_counter() - model_start
+)
 
 print(
-    f"ML model loading time: {_load_time:.2f} seconds"
+    f"Phishing model loaded in: "
+    f"{model_load_time:.2f} seconds"
 )
+
+
+# ==========================================
+# TOTAL LOAD TIME
+# ==========================================
+
+total_load_time = (
+    vectorizer_load_time
+    + model_load_time
+)
+
+print(
+    f"Total ML loading time: "
+    f"{total_load_time:.2f} seconds"
+)
+
+print("ML phishing detection system ready.")
+print("==========================================\n")
 
 
 # ==========================================
@@ -65,6 +106,13 @@ def classify_email(
     """
     Classify an email as phishing or legitimate.
 
+    Parameters:
+        subject:
+            Email subject.
+
+        body:
+            Email body.
+
     Returns:
         prediction:
             "phishing" or "legitimate"
@@ -73,12 +121,21 @@ def classify_email(
             Probability predicted by the ML model.
     """
 
-    # Handle missing values
+    # --------------------------------------
+    # HANDLE MISSING VALUES
+    # --------------------------------------
+
     subject = subject or ""
     body = body or ""
 
-    # Combine subject and body
-    # using the same format used during training
+
+    # --------------------------------------
+    # COMBINE SUBJECT + BODY
+    # --------------------------------------
+
+    # This format MUST remain the same
+    # as the format used during training.
+
     email_text = (
         "Subject: "
         + str(subject)
@@ -86,25 +143,48 @@ def classify_email(
         + str(body)
     )
 
-    # Convert email text into TF-IDF features
+
+    # --------------------------------------
+    # CONVERT TEXT TO TF-IDF
+    # --------------------------------------
+
     email_tfidf = vectorizer.transform(
         [email_text]
     )
 
-    # Make prediction
+
+    # --------------------------------------
+    # MAKE PREDICTION
+    # --------------------------------------
+
     prediction = model.predict(
         email_tfidf
     )[0]
 
-    # Get probabilities
+
+    # --------------------------------------
+    # GET MODEL PROBABILITIES
+    # --------------------------------------
+
     probabilities = model.predict_proba(
         email_tfidf
     )[0]
 
-    # Class 1 = phishing
+
+    # --------------------------------------
+    # PHISHING PROBABILITY
+    # --------------------------------------
+
+    # Class 1 = Phishing
+
     phishing_probability = float(
         probabilities[1]
     )
+
+
+    # --------------------------------------
+    # RETURN RESULT
+    # --------------------------------------
 
     return {
         "prediction": (
