@@ -7,6 +7,3 @@ __pycache__/
 *.pyc
 .env
 .env*
-
-# ML model
-backend/models/
