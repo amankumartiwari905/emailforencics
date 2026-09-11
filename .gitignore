@@ -8,8 +8,5 @@ __pycache__/
 .env
 .env*
 
-# ML dataset
-backend/data/
-
 # ML model
 backend/models/
