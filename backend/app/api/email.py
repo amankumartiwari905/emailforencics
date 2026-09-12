@@ -27,6 +27,7 @@ from app.services.location_analyzer import (
     find_earliest_reliable_ip,
     build_relay_chain,
     detect_trusted_hop_boundary,
+    build_trace_comparison,
 )
 
 router = APIRouter()
@@ -65,6 +66,15 @@ async def analyze_email_endpoint(file: UploadFile = File(...)):
 
     for ip in ip_addresses:
         ip_intelligence.append(check_proxy(ip))
+        
+        
+        # Build IP -> organization lookup from ProxyCheck results, used to
+    # cross-verify hostnames that claim to be a trusted provider.
+    ip_org_lookup = {
+        item.get("ip"): item.get("organization") or item.get("provider")
+        for item in ip_intelligence
+        if item.get("ip")
+    }
 
 
     # ==========================================
@@ -102,7 +112,8 @@ async def analyze_email_endpoint(file: UploadFile = File(...)):
 
     trusted_hop_limit = detect_trusted_hop_boundary(
         ip_hops,
-        recipient_domain
+        recipient_domain,
+        ip_org_lookup,
     )
 
     earliest_ip_info = find_earliest_reliable_ip(
@@ -111,6 +122,12 @@ async def analyze_email_endpoint(file: UploadFile = File(...)):
     )
 
     relay_chain = build_relay_chain(ip_hops)
+
+    trace_comparison = build_trace_comparison(
+        ip_hops,
+        trusted_hop_limit,
+        earliest_ip_info
+    )
 
 
     # ==========================================
@@ -260,6 +277,8 @@ async def analyze_email_endpoint(file: UploadFile = File(...)):
 
         "relay_chain": relay_chain,
 
+        "trace_comparison": trace_comparison,
+
         "attachment_analysis": attachment_analysis,
 
         "lookalike_analysis": lookalike_analysis,
@@ -328,3 +347,22 @@ async def analyze_email_with_report(
         media_type="application/pdf",
         filename="forensic_report.pdf"
     )
+
+
+@router.get("/cases/{case_id}/cluster")
+async def get_case_cluster(case_id: str):
+    """
+    Returns the full campaign cluster (graph) this case belongs to --
+    every connected case/domain/IP/URL reachable through shared
+    indicators, for rendering a network graph in the dashboard.
+    """
+    cluster = get_campaign_cluster(case_id)
+    if cluster is None:
+        return {"error": f"Case {case_id} not found"}
+    return cluster
+
+
+@router.get("/cases/graph")
+async def get_correlation_graph():
+    """Returns the entire correlation graph across all analyzed emails."""
+    return get_full_graph()

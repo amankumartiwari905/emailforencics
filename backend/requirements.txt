@@ -6,7 +6,7 @@ click==8.2.1
 colorama==0.4.6
 dnspython==2.8.0
 fastapi==0.141.1
-h11==0.16.0
+h11>=0.13,<0.15
 idna==3.19
 joblib==1.5.2
 numpy==2.3.2
@@ -24,4 +24,4 @@ typing-inspection==0.4.2
 typing_extensions==4.16.0
 urllib3==2.7.0
 uvicorn==0.52.4
-httpx==0.28.1
+httpx==0.28.1 
