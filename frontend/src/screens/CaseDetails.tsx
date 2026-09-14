@@ -1,209 +1,1113 @@
 import { useState } from "react";
-import { ArrowLeft, Shield, Clock, CheckCircle, Plus, FileText, Download } from "lucide-react";
+
+import {
+  ArrowLeft,
+  Shield,
+  Clock,
+  CheckCircle,
+  AlertTriangle,
+  Globe,
+  Database,
+  Mail,
+  Link as LinkIcon,
+  FileText,
+} from "lucide-react";
+
 import type { Screen } from "../App";
+import type { CaseRecord } from "../App";
 
-interface Props { navigate: (s: Screen) => void; }
+interface Props {
+  navigate: (s: Screen) => void;
+  activeCase: CaseRecord;
+}
 
-const tabs = ["Overview", "Emails", "Indicators", "Infrastructure", "Timeline", "Evidence", "Reports"];
+export default function CaseDetails({
+  navigate,
+  activeCase,
+}: Props) {
+  const [activeTab, setActiveTab] =
+    useState("Overview");
 
-const timeline = [
-  { time: "08:42", label: "Email received by target user", analyst: "System" },
-  { time: "08:45", label: "High-risk threat detected (score: 92/100)", analyst: "AI Engine" },
-  { time: "08:47", label: "Case created and assigned to Analyst 01", analyst: "System" },
-  { time: "08:51", label: "Domain paypa1-secure.com investigated — 12 days old", analyst: "Analyst 01" },
-  { time: "08:56", label: "IP 185.220.101.47 correlated with known campaign", analyst: "Analyst 01" },
-  { time: "09:12", label: "Evidence EV-001 and EV-002 collected", analyst: "Analyst 01" },
-  { time: "09:20", label: "Report draft generated", analyst: "Analyst 01" },
-];
+  const analysis =
+    activeCase.analysis;
 
-const evidence = [
-  { id: "EV-001", type: "Email", source: "Uploaded .eml", hash: "sha256:3a7fc1b4e8d09…", collected: "Today 08:47", by: "Analyst 01", integrity: "Verified" },
-  { id: "EV-002", type: "Domain WHOIS", source: "WHOIS lookup", hash: "sha256:9f4a2c6b1d83…", collected: "Today 08:51", by: "Analyst 01", integrity: "Verified" },
-  { id: "EV-003", type: "IP Lookup", source: "Geo API", hash: "sha256:2e8b5f7c4a19…", collected: "Today 08:56", by: "Analyst 01", integrity: "Verified" },
-  { id: "EV-004", type: "URL Scan", source: "URL intelligence API", hash: "sha256:7d3c9a1f6e42…", collected: "Today 09:05", by: "Analyst 01", integrity: "Verified" },
-];
+  const threat =
+    analysis.threat_analysis || {};
 
-export default function CaseDetails({ navigate }: Props) {
-  const [activeTab, setActiveTab] = useState("Overview");
+  const email =
+    analysis.email || {};
+
+  const domain =
+    analysis.domain_analysis || {};
+
+  /*
+    Your backend's actual threat analysis
+    contains the authentication results in
+    the threat object.
+
+    We check several possible names so the
+    UI doesn't break if the backend uses
+    slightly different field names.
+  */
+ const getStatus = (
+  ...values: any[]
+) => {
+  for (const value of values) {
+    if (
+      value !== undefined &&
+      value !== ""
+    ) {
+      if (value === null) {
+        return "NOT FOUND";
+      } 
+
+      return String(
+        value
+      ).toUpperCase();
+    }
+  }
+
+  return "UNKNOWN";
+};
+
+  const spfStatus =
+    getStatus(
+      threat.spf,
+      threat.spf_result,
+      threat.spf_status,
+      threat.auth_analysis?.spf
+    );
+
+  const dkimStatus =
+    getStatus(
+      threat.dkim,
+      threat.dkim_result,
+      threat.dkim_status,
+      threat.auth_analysis?.dkim
+    );
+
+  const dmarcStatus =
+    getStatus(
+      threat.dmarc,
+      threat.dmarc_result,
+      threat.dmarc_status,
+      threat.auth_analysis?.dmarc
+    );
+
+  const originIP =
+    analysis
+      .earliest_reliable_ip
+      ?.ip || "Unknown";
+
+  const location =
+    analysis.ip_locations?.[
+      originIP
+    ];
+
+  const urls =
+    Array.isArray(
+      analysis.url_analysis
+    )
+      ? analysis.url_analysis
+      : [];
+
+  const suspiciousUrls =
+    urls.filter(
+      (item: any) =>
+        item.suspicious === true
+    );
+
+  const relayChain =
+    Array.isArray(
+      analysis.relay_chain
+    )
+      ? analysis.relay_chain
+      : [];
+
+  const reasons =
+    Array.isArray(
+      threat.reasons
+    )
+      ? threat.reasons
+      : [];
+
+  const attachments =
+    Array.isArray(
+      analysis.attachment_analysis
+    )
+      ? analysis.attachment_analysis
+      : [];
+
+  const indicators = [
+    {
+      label: "SPF",
+      value: spfStatus,
+      bad:
+        spfStatus !== "PASS" &&
+        spfStatus !== "FOUND",
+    },
+    {
+      label: "DKIM",
+      value: dkimStatus,
+      bad:
+        dkimStatus !== "PASS" &&
+        dkimStatus !== "FOUND",
+    },
+    {
+      label: "DMARC",
+      value: dmarcStatus,
+      bad:
+        dmarcStatus !== "PASS" &&
+        dmarcStatus !== "FOUND",
+    },
+    {
+      label: "Suspicious URLs",
+      value:
+        suspiciousUrls.length,
+      bad:
+        suspiciousUrls.length > 0,
+    },
+  ];
 
   return (
     <div>
-      {/* Back + header */}
-      <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 20, marginTop: -8 }}>
-        <button className="btn-ghost" onClick={() => navigate("cases")} style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 13 }}>
-          <ArrowLeft size={14} /> Cases
+      {/* Back */}
+      <div
+        style={{
+          display: "flex",
+          alignItems: "center",
+          gap: 12,
+          marginBottom: 20,
+          marginTop: -8,
+        }}
+      >
+        <button
+          className="btn-ghost"
+          onClick={() =>
+            navigate("cases")
+          }
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: 6,
+            fontSize: 13,
+          }}
+        >
+          <ArrowLeft size={14} />
+          Cases
         </button>
       </div>
 
-      {/* Case header */}
-      <div className="card" style={{ padding: 24, marginBottom: 20 }}>
-        <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", flexWrap: "wrap", gap: 16 }}>
+      {/* Header */}
+      <div
+        className="card"
+        style={{
+          padding: 24,
+          marginBottom: 20,
+        }}
+      >
+        <div
+          style={{
+            display: "flex",
+            alignItems: "flex-start",
+            justifyContent:
+              "space-between",
+            gap: 20,
+            flexWrap: "wrap",
+          }}
+        >
           <div>
-            <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 8 }}>
-              <span className="mono" style={{ fontSize: 13, color: "#4a9eff" }}>CASE-2026-001284</span>
-              <span className="badge-critical" style={{ padding: "2px 10px", borderRadius: 4, fontSize: 11, fontWeight: 700 }}>CRITICAL</span>
-              <span className="badge-investigating" style={{ padding: "2px 10px", borderRadius: 4, fontSize: 11, fontWeight: 600 }}>INVESTIGATING</span>
+            <div
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: 10,
+                marginBottom: 10,
+              }}
+            >
+              <Shield
+                size={20}
+                color="#ff3b5c"
+              />
+
+              <span
+                className="mono"
+                style={{
+                  color: "#4a9eff",
+                  fontSize: 13,
+                }}
+              >
+                {activeCase.id}
+              </span>
+
+              <span
+                className={`badge-${activeCase.severity}`}
+                style={{
+                  padding:
+                    "3px 10px",
+                  borderRadius: 4,
+                  fontSize: 11,
+                  fontWeight: 700,
+                  textTransform:
+                    "uppercase",
+                }}
+              >
+                {activeCase.severity}
+              </span>
             </div>
-            <h2 style={{ fontSize: 20, fontWeight: 700, color: "#e8eaf6", margin: "0 0 8px" }}>Payment Fraud Campaign</h2>
-            <div style={{ fontSize: 13, color: "#5a6a88" }}>Assigned to <span style={{ color: "#8b96b8" }}>Analyst 01</span> · Created Today 08:42</div>
+
+            <div
+              style={{
+                fontSize: 22,
+                fontWeight: 800,
+                color: "#e8eaf6",
+              }}
+            >
+              {activeCase.title}
+            </div>
+
+            <div
+              style={{
+                marginTop: 8,
+                fontSize: 13,
+                color: "#5a6a88",
+              }}
+            >
+              {activeCase.type}
+              {" · "}
+              {activeCase.status}
+              {" · "}
+              Assigned to{" "}
+              {activeCase.analyst}
+            </div>
           </div>
-          <div style={{ display: "flex", gap: 8 }}>
-            <button className="btn-secondary" style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 13 }} onClick={() => navigate("forensic-report")}>
-              <Download size={13} /> Export Report
-            </button>
-            <button className="btn-primary" style={{ fontSize: 13 }}>Update Status</button>
+
+          <div
+            style={{
+              textAlign: "right",
+            }}
+          >
+            <div
+              style={{
+                fontSize: 11,
+                color: "#5a6a88",
+                letterSpacing:
+                  "0.08em",
+              }}
+            >
+              THREAT SCORE
+            </div>
+
+            <div
+              style={{
+                fontSize: 32,
+                fontWeight: 800,
+                color: "#ff3b5c",
+              }}
+            >
+              {activeCase.score}
+              <span
+                style={{
+                  fontSize: 14,
+                  color: "#5a6a88",
+                }}
+              >
+                {" "}
+                /100
+              </span>
+            </div>
+
+            <div
+              style={{
+                fontSize: 11,
+                fontWeight: 700,
+                color: "#ff3b5c",
+              }}
+            >
+              {activeCase.classification}
+            </div>
           </div>
         </div>
       </div>
 
       {/* Tabs */}
-      <div style={{ display: "flex", gap: 2, marginBottom: 20, borderBottom: "1px solid #252e4a", paddingBottom: 0 }}>
-        {tabs.map(t => (
+      <div
+        style={{
+          display: "flex",
+          gap: 4,
+          marginBottom: 20,
+          borderBottom:
+            "1px solid #252e4a",
+        }}
+      >
+        {[
+          "Overview",
+          "Indicators",
+          "Infrastructure",
+          "Timeline",
+          "Evidence",
+        ].map((tab) => (
           <button
-            key={t}
-            onClick={() => setActiveTab(t)}
+            key={tab}
+            onClick={() =>
+              setActiveTab(tab)
+            }
             style={{
-              padding: "9px 16px", border: "none", cursor: "pointer", fontSize: 13,
-              background: "transparent", fontWeight: activeTab === t ? 600 : 400,
-              color: activeTab === t ? "#111827" : "#64748b",
-              borderBottom: activeTab === t ? "2px solid #4a7cff" : "2px solid transparent",
-              transition: "all 0.15s"
+              padding:
+                "10px 16px",
+              background:
+                activeTab === tab
+                  ? "#1e2640"
+                  : "transparent",
+              color:
+                activeTab === tab
+                  ? "#ffffff"
+                  : "#64748b",
+              border: "none",
+              borderRadius:
+                "7px 7px 0 0",
+              cursor: "pointer",
+              fontSize: 12,
+              fontWeight:
+                activeTab === tab
+                  ? 600
+                  : 400,
             }}
-          >{t}</button>
+          >
+            {tab}
+          </button>
         ))}
       </div>
 
+      {/* OVERVIEW */}
       {activeTab === "Overview" && (
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 280px", gap: 16 }}>
-          <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-            <div className="card" style={{ padding: 24 }}>
-              <div style={{ fontSize: 15, fontWeight: 600, color: "#e8eaf6", marginBottom: 12 }}>Case Summary</div>
-              <p style={{ fontSize: 14, color: "#8b96b8", lineHeight: 1.7, margin: 0 }}>
-                A targeted phishing campaign impersonating PayPal was detected. The threat actor registered a lookalike domain (paypa1-secure.com) 12 days before the attack. The campaign employs urgency language and credential harvesting techniques. The sending infrastructure has been linked to 4 prior campaigns.
-              </p>
+        <div
+          style={{
+            display: "grid",
+            gridTemplateColumns:
+              "1fr 1fr",
+            gap: 16,
+          }}
+        >
+          <div
+            className="card"
+            style={{
+              padding: 24,
+            }}
+          >
+            <div
+              style={{
+                fontSize: 15,
+                fontWeight: 600,
+                color: "#e8eaf6",
+                marginBottom: 18,
+              }}
+            >
+              Email Information
             </div>
-            <div className="card" style={{ padding: 24 }}>
-              <div style={{ fontSize: 15, fontWeight: 600, color: "#e8eaf6", marginBottom: 16 }}>Related Indicators</div>
-              <div style={{ display: "flex", flexWrap: "wrap", gap: 10 }}>
-                {["paypa1-secure.com","185.220.101.47","194.165.16.4","security-alert@paypa1-secure.com","mailer@mx.paypa1-secure.com"].map(ind => (
-                  <span key={ind} className="mono" style={{ fontSize: 12, padding: "4px 10px", background: "#151c2f", border: "1px solid #252e4a", borderRadius: 6, color: "#8b96b8" }}>{ind}</span>
-                ))}
-              </div>
-            </div>
+
+            {[
+              [
+                "From",
+                email.from ||
+                  "Unknown",
+              ],
+              [
+                "To",
+                email.to ||
+                  "Unknown",
+              ],
+              [
+                "Reply-To",
+                email.reply_to ||
+                  "None",
+              ],
+              [
+                "Return-Path",
+                email.return_path ||
+                  "None",
+              ],
+              [
+                "Subject",
+                email.subject ||
+                  "Unknown",
+              ],
+              [
+                "Date",
+                email.date ||
+                  "Unknown",
+              ],
+            ].map(
+              ([label, value]) => (
+                <div
+                  key={label}
+                  style={{
+                    display: "flex",
+                    gap: 16,
+                    padding:
+                      "10px 0",
+                    borderBottom:
+                      "1px solid #252e4a",
+                  }}
+                >
+                  <span
+                    style={{
+                      width: 100,
+                      color:
+                        "#5a6a88",
+                      fontSize: 12,
+                    }}
+                  >
+                    {label}
+                  </span>
+
+                  <span
+                    className="mono"
+                    style={{
+                      color:
+                        "#c8d0e8",
+                      fontSize: 12,
+                      wordBreak:
+                        "break-all",
+                    }}
+                  >
+                    {String(value)}
+                  </span>
+                </div>
+              )
+            )}
           </div>
 
-          <div className="card" style={{ padding: 24, height: "fit-content" }}>
-            <div style={{ fontSize: 13, fontWeight: 600, color: "#5a6a88", letterSpacing: "0.06em", marginBottom: 16 }}>CASE METRICS</div>
-            {[
-              { label: "Threat Score", value: "92 / 100", color: "#ff3b5c" },
-              { label: "Emails Linked", value: "3", color: "#e8eaf6" },
-              { label: "Domains", value: "1 malicious", color: "#ff7a4a" },
-              { label: "IPs", value: "2 suspicious", color: "#f5a623" },
-              { label: "Evidence Items", value: "4", color: "#2dc77a" },
-            ].map(m => (
-              <div key={m.label} style={{ display: "flex", justifyContent: "space-between", padding: "10px 0", borderBottom: "1px solid #252e4a" }}>
-                <span style={{ fontSize: 13, color: "#5a6a88" }}>{m.label}</span>
-                <span style={{ fontSize: 13, fontWeight: 700, color: m.color }}>{m.value}</span>
+          <div
+            className="card"
+            style={{
+              padding: 24,
+            }}
+          >
+            <div
+              style={{
+                fontSize: 15,
+                fontWeight: 600,
+                color: "#e8eaf6",
+                marginBottom: 18,
+              }}
+            >
+              Threat Assessment
+            </div>
+
+            <div
+              style={{
+                padding: 16,
+                borderRadius: 8,
+                background:
+                  "rgba(255,59,92,0.06)",
+                border:
+                  "1px solid rgba(255,59,92,0.2)",
+                marginBottom: 16,
+              }}
+            >
+              <div
+                style={{
+                  fontSize: 11,
+                  color: "#5a6a88",
+                  marginBottom: 6,
+                }}
+              >
+                CLASSIFICATION
               </div>
-            ))}
+
+              <div
+                style={{
+                  fontSize: 18,
+                  fontWeight: 700,
+                  color: "#ff3b5c",
+                }}
+              >
+                {activeCase.classification}
+              </div>
+            </div>
+
+            {reasons.length > 0 ? (
+              reasons.map(
+                (
+                  reason: any,
+                  index: number
+                ) => (
+                  <div
+                    key={index}
+                    style={{
+                      display:
+                        "flex",
+                      gap: 8,
+                      marginBottom: 10,
+                      fontSize: 12,
+                      color:
+                        "#8b96b8",
+                    }}
+                  >
+                    <AlertTriangle
+                      size={13}
+                      color="#f5a623"
+                    />
+
+                    {String(reason)}
+                  </div>
+                )
+              )
+            ) : (
+              <div
+                style={{
+                  color:
+                    "#64748b",
+                  fontSize: 12,
+                }}
+              >
+                No additional threat
+                reasons returned.
+              </div>
+            )}
           </div>
         </div>
       )}
 
-      {activeTab === "Timeline" && (
-        <div className="card" style={{ padding: 24 }}>
-          <div style={{ fontSize: 15, fontWeight: 600, color: "#e8eaf6", marginBottom: 20 }}>Investigation Timeline</div>
-          <div style={{ display: "flex", flexDirection: "column" }}>
-            {timeline.map((item, i) => (
-              <div key={i} style={{ display: "flex", gap: 16 }}>
-                <div style={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
-                  <div style={{ width: 8, height: 8, borderRadius: "50%", background: "#4a7cff", flexShrink: 0, marginTop: 4 }} />
-                  {i < timeline.length - 1 && <div style={{ width: 1, flex: 1, background: "#252e4a", marginTop: 4 }} />}
+      {/* INDICATORS */}
+      {activeTab === "Indicators" && (
+        <div
+          className="card"
+          style={{
+            padding: 24,
+          }}
+        >
+          <div
+            style={{
+              display: "grid",
+              gridTemplateColumns:
+                "repeat(4, 1fr)",
+              gap: 12,
+            }}
+          >
+            {indicators.map(
+              (indicator) => (
+                <div
+                  key={indicator.label}
+                  style={{
+                    padding: 18,
+                    borderRadius: 8,
+                    background:
+                      indicator.bad
+                        ? "rgba(255,59,92,0.06)"
+                        : "rgba(45,199,122,0.06)",
+                    border:
+                      indicator.bad
+                        ? "1px solid rgba(255,59,92,0.2)"
+                        : "1px solid rgba(45,199,122,0.2)",
+                  }}
+                >
+                  {indicator.bad ? (
+                    <AlertTriangle
+                      size={15}
+                      color="#ff3b5c"
+                    />
+                  ) : (
+                    <CheckCircle
+                      size={15}
+                      color="#2dc77a"
+                    />
+                  )}
+
+                  <div
+                    style={{
+                      marginTop: 10,
+                      fontSize: 11,
+                      color:
+                        "#5a6a88",
+                    }}
+                  >
+                    {indicator.label}
+                  </div>
+
+                  <div
+                    style={{
+                      marginTop: 4,
+                      fontSize: 15,
+                      fontWeight: 700,
+                      color:
+                        indicator.bad
+                          ? "#ff3b5c"
+                          : "#2dc77a",
+                    }}
+                  >
+                    {String(
+                      indicator.value
+                    ).toUpperCase()}
+                  </div>
                 </div>
-                <div style={{ paddingBottom: i < timeline.length - 1 ? 20 : 0, display: "flex", gap: 16, flex: 1 }}>
-                  <span className="mono" style={{ fontSize: 12, color: "#4a7cff", flexShrink: 0, width: 50 }}>{item.time}</span>
-                  <div style={{ flex: 1 }}>
-                    <div style={{ fontSize: 13, color: "#e8eaf6" }}>{item.label}</div>
-                    <div style={{ fontSize: 11, color: "#4a5a78", marginTop: 2 }}>{item.analyst}</div>
+              )
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* INFRASTRUCTURE */}
+      {activeTab ===
+        "Infrastructure" && (
+        <div
+          style={{
+            display: "grid",
+            gridTemplateColumns:
+              "1fr 1fr",
+            gap: 16,
+          }}
+        >
+          <div
+            className="card"
+            style={{
+              padding: 24,
+            }}
+          >
+            <div
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: 8,
+                marginBottom: 18,
+              }}
+            >
+              <Globe
+                size={16}
+                color="#9b6fff"
+              />
+
+              <span
+                style={{
+                  fontSize: 15,
+                  fontWeight: 600,
+                  color:
+                    "#e8eaf6",
+                }}
+              >
+                Domain Intelligence
+              </span>
+            </div>
+
+            {[
+              [
+                "Domain",
+                domain.domain ||
+                  "Unknown",
+              ],
+              [
+                "Registrar",
+                domain.registrar ||
+                  "Unknown",
+              ],
+              [
+                "Origin IP",
+                originIP,
+              ],
+              [
+                "Location",
+                location
+                  ? `${location.city || "Unknown"}, ${location.country || "Unknown"}`
+                  : "Unknown",
+              ],
+            ].map(
+              ([label, value]) => (
+                <div
+                  key={label}
+                  style={{
+                    padding:
+                      "9px 0",
+                    display:
+                      "flex",
+                    gap: 12,
+                    borderBottom:
+                      "1px solid #252e4a",
+                  }}
+                >
+                  <span
+                    style={{
+                      width: 100,
+                      fontSize: 11,
+                      color:
+                        "#5a6a88",
+                    }}
+                  >
+                    {label}
+                  </span>
+
+                  <span
+                    className="mono"
+                    style={{
+                      fontSize: 12,
+                      color:
+                        "#c8d0e8",
+                    }}
+                  >
+                    {String(value)}
+                  </span>
+                </div>
+              )
+            )}
+          </div>
+
+          <div
+            className="card"
+            style={{
+              padding: 24,
+            }}
+          >
+            <div
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: 8,
+                marginBottom: 18,
+              }}
+            >
+              <Database
+                size={16}
+                color="#4a9eff"
+              />
+
+              <span
+                style={{
+                  fontSize: 15,
+                  fontWeight: 600,
+                  color:
+                    "#e8eaf6",
+                }}
+              >
+                Relay Path
+              </span>
+            </div>
+
+            {relayChain.length ===
+            0 ? (
+              <div
+                style={{
+                  color:
+                    "#64748b",
+                  fontSize: 12,
+                }}
+              >
+                No relay hops
+                returned.
+              </div>
+            ) : (
+              relayChain.map(
+                (
+                  hop: any,
+                  index: number
+                ) => (
+                  <div
+                    key={index}
+                    style={{
+                      display:
+                        "flex",
+                      gap: 10,
+                      marginBottom: 12,
+                    }}
+                  >
+                    <div
+                      style={{
+                        width: 24,
+                        height: 24,
+                        borderRadius:
+                          "50%",
+                        background:
+                          "rgba(74,158,255,0.1)",
+                        display:
+                          "flex",
+                        alignItems:
+                          "center",
+                        justifyContent:
+                          "center",
+                        fontSize: 10,
+                        color:
+                          "#4a9eff",
+                      }}
+                    >
+                      {index + 1}
+                    </div>
+
+                    <div
+                      className="mono"
+                      style={{
+                        fontSize: 12,
+                        color:
+                          "#c8d0e8",
+                      }}
+                    >
+                      {hop.ip ||
+                        hop.host ||
+                        hop.server ||
+                        "Unknown"}
+                    </div>
+                  </div>
+                )
+              )
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* TIMELINE */}
+      {activeTab === "Timeline" && (
+        <div
+          className="card"
+          style={{
+            padding: 24,
+          }}
+        >
+          {[
+            "Email analyzed by AI threat detection engine",
+            `Threat score calculated: ${activeCase.score}/100`,
+            "Case created from live email analysis",
+            `Earliest reliable IP: ${originIP}`,
+          ].map(
+            (event, index) => (
+              <div
+                key={index}
+                style={{
+                  display:
+                    "flex",
+                  gap: 14,
+                  marginBottom: 20,
+                }}
+              >
+                <Clock
+                  size={15}
+                  color="#4a9eff"
+                />
+
+                <div>
+                  <div
+                    style={{
+                      fontSize: 13,
+                      color:
+                        "#c8d0e8",
+                    }}
+                  >
+                    {event}
+                  </div>
+
+                  <div
+                    style={{
+                      fontSize: 11,
+                      color:
+                        "#5a6a88",
+                      marginTop: 4,
+                    }}
+                  >
+                    AI Forensic Engine
                   </div>
                 </div>
               </div>
-            ))}
-          </div>
+            )
+          )}
         </div>
       )}
 
+      {/* EVIDENCE */}
       {activeTab === "Evidence" && (
-        <div>
-          <div style={{ display: "flex", justifyContent: "flex-end", marginBottom: 16 }}>
-            <button className="btn-primary" style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 13 }}>
-              <Plus size={14} /> Add Evidence
-            </button>
+        <div
+          className="card"
+          style={{
+            padding: 24,
+          }}
+        >
+          <div
+            style={{
+              fontSize: 15,
+              fontWeight: 600,
+              color:
+                "#e8eaf6",
+              marginBottom: 18,
+            }}
+          >
+            Collected Evidence
           </div>
-          <div style={{ marginBottom: 16, padding: "12px 16px", background: "rgba(45,199,122,0.06)", border: "1px solid rgba(45,199,122,0.2)", borderRadius: 8, display: "flex", alignItems: "center", gap: 10 }}>
-            <CheckCircle size={14} color="#2dc77a" />
-            <span style={{ fontSize: 13, fontWeight: 600, color: "#2dc77a" }}>Evidence Integrity: VERIFIED</span>
-            <span style={{ fontSize: 12, color: "#5a6a88", marginLeft: 4 }}>All 4 items have valid SHA-256 hashes and intact chain of custody</span>
-          </div>
-          <div className="card" style={{ padding: 0, overflow: "hidden" }}>
-            <table style={{ width: "100%", borderCollapse: "collapse" }}>
-              <thead>
-                <tr style={{ borderBottom: "1px solid #252e4a" }}>
-                  {["Evidence ID","Type","Source","Hash (SHA-256)","Collected","Collected By","Integrity"].map(h => (
-                    <th key={h} style={{ padding: "11px 16px", textAlign: "left", fontSize: 11, color: "#5a6a88", fontWeight: 600, letterSpacing: "0.04em" }}>{h.toUpperCase()}</th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {evidence.map((ev, i) => (
-                  <tr key={i} className="row-hover" style={{ borderBottom: i < evidence.length - 1 ? "1px solid #c8cfe0" : "none" }}>
-                    <td style={{ padding: "12px 16px" }}><span className="mono" style={{ fontSize: 12, color: "#4a9eff" }}>{ev.id}</span></td>
-                    <td style={{ padding: "12px 16px", fontSize: 13, color: "#8b96b8" }}>{ev.type}</td>
-                    <td style={{ padding: "12px 16px", fontSize: 12, color: "#8b96b8" }}>{ev.source}</td>
-                    <td style={{ padding: "12px 16px" }}><span className="mono" style={{ fontSize: 11, color: "#5a6a88" }}>{ev.hash}</span></td>
-                    <td style={{ padding: "12px 16px", fontSize: 12, color: "#5a6a88" }}>{ev.collected}</td>
-                    <td style={{ padding: "12px 16px", fontSize: 12, color: "#8b96b8" }}>{ev.by}</td>
-                    <td style={{ padding: "12px 16px" }}>
-                      <span className="badge-safe" style={{ padding: "2px 8px", borderRadius: 4, fontSize: 11, fontWeight: 600, display: "flex", alignItems: "center", gap: 4, width: "fit-content" }}>
-                        <CheckCircle size={10} /> {ev.integrity}
-                      </span>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </div>
-      )}
 
-      {activeTab === "Reports" && (
-        <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-          {[
-            { name: "Forensic Analysis Report — CASE-2026-001284", date: "Today 09:20", analyst: "Analyst 01", status: "Draft" },
-          ].map((rep, i) => (
-            <div key={i} className="card" style={{ padding: 20, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-              <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
-                <div style={{ width: 40, height: 40, borderRadius: 8, background: "rgba(74,124,255,0.1)", display: "flex", alignItems: "center", justifyContent: "center" }}>
-                  <FileText size={18} color="#4a7cff" />
+          <div
+            style={{
+              display: "grid",
+              gap: 10,
+            }}
+          >
+            <div
+              style={{
+                display: "flex",
+                alignItems:
+                  "center",
+                gap: 12,
+                padding: 14,
+                border:
+                  "1px solid #252e4a",
+                borderRadius: 8,
+              }}
+            >
+              <Mail
+                size={17}
+                color="#4a9eff"
+              />
+
+              <div>
+                <div
+                  style={{
+                    fontSize: 13,
+                    color:
+                      "#c8d0e8",
+                    fontWeight: 600,
+                  }}
+                >
+                  Original Email
                 </div>
-                <div>
-                  <div style={{ fontSize: 14, fontWeight: 600, color: "#e8eaf6" }}>{rep.name}</div>
-                  <div style={{ fontSize: 12, color: "#5a6a88", marginTop: 4 }}>{rep.date} · {rep.analyst}</div>
+
+                <div
+                  style={{
+                    fontSize: 11,
+                    color:
+                      "#5a6a88",
+                    marginTop: 3,
+                  }}
+                >
+                  {email.subject ||
+                    "Email evidence"}
                 </div>
-              </div>
-              <div style={{ display: "flex", gap: 8 }}>
-                <span className="badge-medium" style={{ padding: "2px 8px", borderRadius: 4, fontSize: 11, fontWeight: 600 }}>{rep.status}</span>
-                <button className="btn-secondary" style={{ fontSize: 13, padding: "7px 16px" }} onClick={() => navigate("forensic-report")}>View Report</button>
               </div>
             </div>
-          ))}
-        </div>
-      )}
 
-      {!["Overview","Timeline","Evidence","Reports"].includes(activeTab) && (
-        <div style={{ textAlign: "center", padding: "60px 40px" }}>
-          <div style={{ fontSize: 14, fontWeight: 600, color: "#5a6a88", marginBottom: 8 }}>No {activeTab.toLowerCase()} data yet</div>
-          <div style={{ fontSize: 13, color: "#4a5a78" }}>Add items to this investigation to populate this view</div>
+            <div
+              style={{
+                display: "flex",
+                alignItems:
+                  "center",
+                gap: 12,
+                padding: 14,
+                border:
+                  "1px solid #252e4a",
+                borderRadius: 8,
+              }}
+            >
+              <Globe
+                size={17}
+                color="#9b6fff"
+              />
+
+              <div>
+                <div
+                  style={{
+                    fontSize: 13,
+                    color:
+                      "#c8d0e8",
+                    fontWeight: 600,
+                  }}
+                >
+                  Origin Infrastructure
+                </div>
+
+                <div
+                  className="mono"
+                  style={{
+                    fontSize: 11,
+                    color:
+                      "#5a6a88",
+                    marginTop: 3,
+                  }}
+                >
+                  {originIP}
+                </div>
+              </div>
+            </div>
+
+            <div
+              style={{
+                display: "flex",
+                alignItems:
+                  "center",
+                gap: 12,
+                padding: 14,
+                border:
+                  "1px solid #252e4a",
+                borderRadius: 8,
+              }}
+            >
+              <LinkIcon
+                size={17}
+                color="#ff3b5c"
+              />
+
+              <div>
+                <div
+                  style={{
+                    fontSize: 13,
+                    color:
+                      "#c8d0e8",
+                    fontWeight: 600,
+                  }}
+                >
+                  URL Evidence
+                </div>
+
+                <div
+                  style={{
+                    fontSize: 11,
+                    color:
+                      "#5a6a88",
+                    marginTop: 3,
+                  }}
+                >
+                  {urls.length} URL(s)
+                  {" · "}
+                  {suspiciousUrls.length} suspicious
+                </div>
+              </div>
+            </div>
+
+            <div
+              style={{
+                display: "flex",
+                alignItems:
+                  "center",
+                gap: 12,
+                padding: 14,
+                border:
+                  "1px solid #252e4a",
+                borderRadius: 8,
+              }}
+            >
+              <FileText
+                size={17}
+                color="#f5a623"
+              />
+
+              <div>
+                <div
+                  style={{
+                    fontSize: 13,
+                    color:
+                      "#c8d0e8",
+                    fontWeight: 600,
+                  }}
+                >
+                  Attachments
+                </div>
+
+                <div
+                  style={{
+                    fontSize: 11,
+                    color:
+                      "#5a6a88",
+                    marginTop: 3,
+                  }}
+                >
+                  {attachments.length} attachment(s)
+                  {" detected"}
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
       )}
     </div>

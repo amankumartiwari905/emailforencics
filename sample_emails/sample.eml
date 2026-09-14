@@ -1,28 +1,26 @@
-From: attacker@example.com
+From: subscription-renewals@account-update-alert.com
 To: victim@example.com
-Subject: Your Account Has Been Suspended
-Date: Wed, 26 Aug 2026 10:00:00 +0530
-Reply-To: support@random-domain.com
-Return-Path: bounce@random-domain.com
+Subject: URGENT: Your Subscription Renewal Failed - Account Suspension Notice
+Date: Mon, 14 Sep 2026 15:10:22 +0530
+Reply-To: support@account-update-alert.com
+Return-Path: bounce@account-update-alert.com
 MIME-Version: 1.0
-Content-Type: text/plain; charset="UTF-8"
-Received: from mail.attacker.com (185.23.45.67)
-Received: from relay.example.com (10.20.30.40)
-From:
-attacker@example.com
+Content-Type: text/plain; charset=UTF-8
+Received: from account-update-alert.com (198.51.100.12)
+Received: from example.com (10.20.30.42)
+Message-ID: <0200029f-8g43-5dcb-ce41-0c5f7e89b0d3@account-update-alert.com>
 
-Reply-To:
-support@random-domain.com
+Dear Member,
 
-Return-Path:
-bounce@random-domain.com
-Hello,
+We were unable to process your automatic monthly renewal for your premium subscription because your payment method on file was rejected.
 
-Your account has been suspended.
+To avoid losing access to your cloud storage, premium tools, and saved data, you must update your billing information immediately. If payment is not received within 48 hours, your account will be scheduled for permanent deletion.
 
-Please click the link below to verify your account:
+Please click the secure link below to update your payment details and keep your account active:   and send money 1000
 
-https://example.com/login
+https://example-secure-update.com
 
-Regards,
-Security Team
+Thank you for your prompt attention to this matter.
+
+Sincerely,
+Subscription & Billing Team
