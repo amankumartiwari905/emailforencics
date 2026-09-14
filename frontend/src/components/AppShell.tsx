@@ -6,7 +6,7 @@ import {
   FolderOpen, History, ChevronDown, Activity, CheckCircle,
   BarChart2, Network
 } from "lucide-react";
-import type { Screen } from "../App";
+import type { Screen } from "../../src/App";
 
 interface Props {
   screen: Screen;

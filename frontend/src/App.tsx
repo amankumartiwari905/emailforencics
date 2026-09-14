@@ -1,4 +1,5 @@
 import { useState } from "react";
+
 import Login from "./screens/Login";
 import Dashboard from "./screens/Dashboard";
 import AnalyzeEmail from "./screens/AnalyzeEmail";
@@ -17,6 +18,7 @@ import AnalysisHistory from "./screens/AnalysisHistory";
 import Settings from "./screens/Settings";
 import SpamTracker from "./screens/SpamTracker";
 import ServerTrace from "./screens/ServerTrace";
+
 import AppShell from "./components/AppShell";
 
 export type Screen =
@@ -49,29 +51,81 @@ export default function App() {
 
   if (screen === "processing") {
     return (
-      <AnalysisProcessing onComplete={() => setScreen("result")} />
+      <AnalysisProcessing
+        onComplete={() => setScreen("result")}
+      />
     );
   }
 
   const screenMap: Record<Screen, React.ReactNode> = {
     login: null,
     processing: null,
-    dashboard: <Dashboard navigate={setScreen} />,
-    analyze: <AnalyzeEmail onAnalyze={() => setScreen("processing")} />,
-    result: <AnalysisResult navigate={setScreen} />,
-    "header-forensics": <HeaderForensics navigate={setScreen} />,
-    "url-domain": <UrlDomainIntelligence navigate={setScreen} />,
-    "ip-geo": <IpGeolocation navigate={setScreen} />,
-    "relay-path": <RelayPath navigate={setScreen} />,
-    "threat-intel": <ThreatIntelligence navigate={setScreen} />,
-    cases: <Cases navigate={setScreen} />,
-    "case-details": <CaseDetails navigate={setScreen} />,
-    "forensic-report": <ForensicReport navigate={setScreen} />,
-    alerts: <Alerts navigate={setScreen} />,
-    history: <AnalysisHistory navigate={setScreen} />,
-    settings: <Settings />,
-    "spam-tracker": <SpamTracker navigate={setScreen} />,
-    "server-trace": <ServerTrace navigate={setScreen} />,
+
+    dashboard: (
+      <Dashboard navigate={setScreen} />
+    ),
+
+    analyze: (
+      <AnalyzeEmail
+        onAnalyze={() => setScreen("processing")}
+      />
+    ),
+
+    result: (
+      <AnalysisResult navigate={setScreen} />
+    ),
+
+    "header-forensics": (
+      <HeaderForensics navigate={setScreen} />
+    ),
+
+    "url-domain": (
+      <UrlDomainIntelligence navigate={setScreen} />
+    ),
+
+    "ip-geo": (
+      <IpGeolocation navigate={setScreen} />
+    ),
+
+    "relay-path": (
+      <RelayPath navigate={setScreen} />
+    ),
+
+    "threat-intel": (
+      <ThreatIntelligence navigate={setScreen} />
+    ),
+
+    cases: (
+      <Cases navigate={setScreen} />
+    ),
+
+    "case-details": (
+      <CaseDetails navigate={setScreen} />
+    ),
+
+    "forensic-report": (
+      <ForensicReport navigate={setScreen} />
+    ),
+
+    alerts: (
+      <Alerts navigate={setScreen} />
+    ),
+
+    history: (
+      <AnalysisHistory navigate={setScreen} />
+    ),
+
+    settings: (
+      <Settings />
+    ),
+
+    "spam-tracker": (
+      <SpamTracker navigate={setScreen} />
+    ),
+
+    "server-trace": (
+      <ServerTrace navigate={setScreen} />
+    ),
   };
 
   return (
