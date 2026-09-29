@@ -1,3 +1,10 @@
+import os
+
+import pytest
+
+if not os.path.exists("data/CEAS_08.csv"):
+    pytest.skip("TF-IDF dataset missing; skipping dataset-dependent script", allow_module_level=True)
+
 import pandas as pd
 from sklearn.model_selection import train_test_split
 from sklearn.feature_extraction.text import TfidfVectorizer
@@ -26,7 +33,7 @@ X_train, X_test, y_train, y_test = train_test_split(
     y,
     test_size=0.20,
     random_state=42,
-    stratify=y
+    stratify=y,
 )
 
 # Create TF-IDF vectorizer
@@ -34,7 +41,7 @@ vectorizer = TfidfVectorizer(
     lowercase=True,
     ngram_range=(1, 2),
     min_df=2,
-    max_features=100000
+    max_features=100000,
 )
 
 # Learn vocabulary ONLY from training data
