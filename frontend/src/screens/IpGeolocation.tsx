@@ -47,15 +47,32 @@ export default function IpGeolocation({
       ? analysis.relay_chain
       : [];
 
+  const rawStatus = String(
+    intel?.status ||
+      location.status ||
+      "unknown"
+  ).toLowerCase();
+
+  const hasPublicLocation =
+    typeof location.latitude ===
+      "number" &&
+    typeof location.longitude ===
+      "number" &&
+    !["private_ip", "invalid_ip", "lookup_error", "unknown"].includes(rawStatus);
+
+  const isPrivate =
+    rawStatus === "private_ip" ||
+    rawStatus === "invalid_ip";
+
   const country =
     location.country ||
     intel?.country ||
-    "Unknown";
+    "Unavailable";
 
   const city =
     location.city ||
     intel?.city ||
-    "Unknown";
+    "Unavailable";
 
   const countryCode =
     location.country_code ||
@@ -64,19 +81,15 @@ export default function IpGeolocation({
 
   const provider =
     intel?.provider ||
-    "Unknown";
+    "Unavailable";
 
   const organization =
     intel?.organization ||
-    "Unknown";
+    "Unavailable";
 
   const asn =
     intel?.asn ||
-    "Unknown";
-
-  const isPrivate =
-    intel?.status ===
-    "private_ip";
+    "Unavailable";
 
   const risk =
     intel?.risk_score;
@@ -84,6 +97,27 @@ export default function IpGeolocation({
   const confidence =
     earliest.confidence ||
     "Unknown";
+
+  const statusValue =
+    rawStatus === "private_ip"
+      ? "Private IP"
+      : rawStatus === "lookup_error"
+        ? "Lookup failed"
+        : rawStatus === "invalid_ip"
+          ? "Invalid IP"
+          : hasPublicLocation
+            ? "Public IP"
+            : "Unavailable";
+
+  const markerLeft =
+    hasPublicLocation
+      ? `${((Number(location.longitude) + 180) / 360) * 100}%`
+      : "50%";
+
+  const markerTop =
+    hasPublicLocation
+      ? `${(90 - (Number(location.latitude) + 90)) / 180 * 100}%`
+      : "50%";
 
   return (
     <div>
@@ -141,7 +175,7 @@ export default function IpGeolocation({
                 marginBottom: 8,
               }}
             >
-              EARLIEST RELIABLE IP
+              EARLIEST PUBLIC RELAY IP
             </div>
 
             <span
@@ -167,13 +201,13 @@ export default function IpGeolocation({
             {[
               {
                 label: "Status",
-                value:
-                  intel?.status ||
-                  "Unknown",
+                value: statusValue,
                 color:
                   isPrivate
                     ? "#f5a623"
-                    : "#2dc77a",
+                    : hasPublicLocation
+                      ? "#2dc77a"
+                      : "#8b96b8",
               },
               {
                 label: "Country",
@@ -251,16 +285,22 @@ export default function IpGeolocation({
               color:
                 isPrivate
                   ? "#f5a623"
-                  : "#2dc77a",
+                  : hasPublicLocation
+                    ? "#2dc77a"
+                    : "#8b96b8",
               background:
                 isPrivate
                   ? "rgba(245,166,35,0.1)"
-                  : "rgba(45,199,122,0.1)",
+                  : hasPublicLocation
+                    ? "rgba(45,199,122,0.1)"
+                    : "rgba(139,150,184,0.12)",
             }}
           >
             {isPrivate
               ? "PRIVATE IP"
-              : "PUBLIC IP"}
+              : hasPublicLocation
+                ? "PUBLIC IP"
+                : "UNAVAILABLE"}
           </span>
         </div>
       </div>
@@ -290,7 +330,7 @@ export default function IpGeolocation({
               marginBottom: 16,
             }}
           >
-            Geographic Origin
+            Network Origin
           </div>
 
           <div
@@ -371,71 +411,95 @@ export default function IpGeolocation({
             </svg>
 
             {/* Origin marker */}
-            <div
-              style={{
-                position:
-                  "absolute",
-                left: "68%",
-                top: "42%",
-                transform:
-                  "translate(-50%,-50%)",
-              }}
-            >
-              <div
-                style={{
-                  width: 14,
-                  height: 14,
-                  borderRadius:
-                    "50%",
-                  background:
-                    "#ff3b5c",
-                  boxShadow:
-                    "0 0 12px rgba(255,59,92,0.6)",
-                  border:
-                    "2px solid white",
-                }}
-              />
-
+            {hasPublicLocation ? (
               <div
                 style={{
                   position:
                     "absolute",
-                  top: "100%",
-                  left: "50%",
+                  left: markerLeft,
+                  top: markerTop,
                   transform:
-                    "translateX(-50%)",
-                  marginTop: 6,
-                  whiteSpace:
-                    "nowrap",
+                    "translate(-50%,-50%)",
                 }}
               >
                 <div
-                  className="mono"
                   style={{
-                    fontSize: 11,
-                    fontWeight: 600,
-                    color:
+                    width: 14,
+                    height: 14,
+                    borderRadius:
+                      "50%",
+                    background:
                       "#ff3b5c",
-                    textAlign:
-                      "center",
+                    boxShadow:
+                      "0 0 12px rgba(255,59,92,0.6)",
+                    border:
+                      "2px solid white",
                   }}
-                >
-                  {originIP}
-                </div>
+                />
 
                 <div
                   style={{
-                    fontSize: 10,
-                    color:
-                      "#5a6a88",
-                    textAlign:
-                      "center",
+                    position:
+                      "absolute",
+                    top: "100%",
+                    left: "50%",
+                    transform:
+                      "translateX(-50%)",
+                    marginTop: 6,
+                    whiteSpace:
+                      "nowrap",
                   }}
                 >
-                  {city}, {country}
+                  <div
+                    className="mono"
+                    style={{
+                      fontSize: 11,
+                      fontWeight: 600,
+                      color:
+                        "#ff3b5c",
+                      textAlign:
+                        "center",
+                    }}
+                  >
+                    {originIP}
+                  </div>
+
+                  <div
+                    style={{
+                      fontSize: 10,
+                      color:
+                        "#5a6a88",
+                      textAlign:
+                        "center",
+                    }}
+                  >
+                    {city}, {country}
+                  </div>
                 </div>
               </div>
-            </div>
+            ) : (
+              <div
+                style={{
+                  position:
+                    "absolute",
+                  left: "50%",
+                  top: "50%",
+                  transform:
+                    "translate(-50%, -50%)",
+                  color: "#8b96b8",
+                  textAlign:
+                    "center",
+                  fontSize: 13,
+                  maxWidth: 220,
+                  lineHeight: 1.5,
+                }}
+              >
+                Geolocation unavailable for this IP.
+                <br />
+                It may be private, reserved, or
+                not publicly routable.
+              </div>
+            )}
           </div>
 
           <div
@@ -467,7 +531,9 @@ export default function IpGeolocation({
                 color: "#e8eaf6",
               }}
             >
-              {city}, {country}
+              {hasPublicLocation
+                ? `${city}, ${country}`
+                : "No public geolocation available"}
             </div>
 
             <div
@@ -479,11 +545,13 @@ export default function IpGeolocation({
               }}
             >
               Latitude:{" "}
-              {location.latitude ??
-                "Unknown"}{" "}
+              {hasPublicLocation
+                ? location.latitude
+                : "Unavailable"}{" "}
               · Longitude:{" "}
-              {location.longitude ??
-                "Unknown"}
+              {hasPublicLocation
+                ? location.longitude
+                : "Unavailable"}
             </div>
           </div>
 
@@ -514,9 +582,10 @@ export default function IpGeolocation({
                 lineHeight: 1.6,
               }}
             >
-              Geolocation estimates the network
-              location of an IP. It does not establish
-              the physical identity of the sender.
+              This is the location of the earliest public
+              relay hop, not necessarily the sender’s true
+              physical location. Cloud providers and mail
+              gateways often mask the actual origin.
             </p>
           </div>
         </div>

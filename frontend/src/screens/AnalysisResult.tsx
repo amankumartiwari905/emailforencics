@@ -184,8 +184,16 @@ export default function AnalysisResult({
       ml.phishing_probability ?? 0
     );
 
+  const finalScore = Number(
+    ml.final_score ?? phishingProbability
+  );
+
   const aiConfidence = Math.round(
     phishingProbability * 100
+  );
+
+  const adjustedConfidence = Math.round(
+    finalScore * 100
   );
 
   const replyMismatch =
@@ -557,41 +565,86 @@ export default function AnalysisResult({
             }}
           >
             {ml.prediction
-              ? `ML: ${ml.prediction}`
+              ? `Model verdict: ${ml.prediction}`
               : "Threat analysis"}
           </div>
 
           <div
             style={{
               display: "flex",
-              alignItems: "center",
-              gap: 6,
-              padding: "6px 14px",
-              background:
-                "rgba(255,59,92,0.08)",
-              borderRadius: 20,
-              border:
-                "1px solid rgba(255,59,92,0.2)",
+              flexDirection: "column",
+              alignItems: "stretch",
+              gap: 8,
+              width: "100%",
             }}
           >
-            <span
+            <div
               style={{
-                fontSize: 12,
-                color: "#8b96b8",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "space-between",
+                gap: 6,
+                padding: "6px 14px",
+                background:
+                  "rgba(255,59,92,0.08)",
+                borderRadius: 20,
+                border:
+                  "1px solid rgba(255,59,92,0.2)",
               }}
             >
-              ML Probability:
-            </span>
+              <span
+                style={{
+                  fontSize: 12,
+                  color: "#8b96b8",
+                }}
+              >
+                ML Probability:
+              </span>
 
-            <span
+              <span
+                style={{
+                  fontSize: 13,
+                  fontWeight: 700,
+                  color: "#ff3b5c",
+                }}
+              >
+                {aiConfidence}%
+              </span>
+            </div>
+
+            <div
               style={{
-                fontSize: 13,
-                fontWeight: 700,
-                color: "#ff3b5c",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "space-between",
+                gap: 6,
+                padding: "6px 14px",
+                background:
+                  "rgba(89, 126, 255, 0.08)",
+                borderRadius: 20,
+                border:
+                  "1px solid rgba(89, 126, 255, 0.2)",
               }}
             >
-              {aiConfidence}%
-            </span>
+              <span
+                style={{
+                  fontSize: 12,
+                  color: "#8b96b8",
+                }}
+              >
+                Rule-adjusted Score:
+              </span>
+
+              <span
+                style={{
+                  fontSize: 13,
+                  fontWeight: 700,
+                  color: "#67b5ff",
+                }}
+              >
+                {adjustedConfidence}%
+              </span>
+            </div>
           </div>
         </div>
 
@@ -778,8 +831,8 @@ export default function AnalysisResult({
                 "IP & GeoLocation",
               sub:
                 originLocation
-                  ? `${originLocation.city || "Unknown"}, ${originLocation.country_code || ""}`
-                  : `Origin: ${originIP}`,
+                  ? `Relay network: ${originLocation.city || "Unknown"}, ${originLocation.country_code || ""}`
+                  : `Relay network: ${originIP}`,
               screen:
                 "ip-geo" as Screen,
               color: "#4a9eff",
